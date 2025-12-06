@@ -12,6 +12,5 @@ function isMeetingWithinWorkday(startWork, endWork, startMeeting, durationMinute
   return startMeetingMin >= startWorkMin && endMeetingMin <= endWorkMin;
 }
 
-// Вызов функции (чтобы ESLint не ругался)
 isMeetingWithinWorkday('08:00', '17:30', '14:00', 90);
 
