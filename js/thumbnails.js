@@ -1,7 +1,9 @@
 import { createPhotos } from './data.js';
+import { openBigPicture } from './big-picture.js';
+
+const photos = createPhotos();
 
 const drawThumbnails = () => {
-  const photos = createPhotos();
   const pictureTemplate = document.querySelector('#picture').content;
   const picturesContainer = document.querySelector('.pictures');
   const fragment = document.createDocumentFragment();
@@ -9,6 +11,7 @@ const drawThumbnails = () => {
   photos.forEach((photo) => {
     const pictureElement = pictureTemplate.cloneNode(true);
 
+    const pictureLink = pictureElement.querySelector('.picture');
     const img = pictureElement.querySelector('.picture__img');
     const likes = pictureElement.querySelector('.picture__likes');
     const comments = pictureElement.querySelector('.picture__comments');
@@ -17,6 +20,11 @@ const drawThumbnails = () => {
     img.alt = photo.description;
     likes.textContent = photo.likes;
     comments.textContent = photo.comments.length;
+
+    pictureLink.addEventListener('click', (evt) => {
+      evt.preventDefault();
+      openBigPicture(photo);
+    });
 
     fragment.appendChild(pictureElement);
   });
