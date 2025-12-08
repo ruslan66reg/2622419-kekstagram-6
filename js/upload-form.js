@@ -1,5 +1,3 @@
-// js/upload-form.js
-
 import { isEscapeKey } from './util.js';
 import { resetImageEffects } from './image-effects.js';
 
