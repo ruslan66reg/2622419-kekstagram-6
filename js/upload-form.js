@@ -1,4 +1,7 @@
+// js/upload-form.js
+
 import { isEscapeKey } from './util.js';
+import { resetImageEffects } from './image-effects.js';
 
 const uploadForm = document.querySelector('.img-upload__form');
 const fileInput = document.querySelector('.img-upload__input');
@@ -14,6 +17,19 @@ const HASHTAG_PATTERN = /^#[a-zа-яё0-9]{1,19}$/i;
 let pristine = null;
 
 const initValidation = () => {
+  if (!uploadForm || !hashtagField || !commentField) {
+    return;
+  }
+
+  if (pristine) {
+    return;
+  }
+
+  if (typeof Pristine === 'undefined') {
+    // eslint-disable-next-line no-console
+    console.warn('Pristine is not loaded, validation disabled');
+    return;
+  }
 
   pristine = new Pristine(uploadForm, {
     classTo: 'img-upload__field-wrapper',
@@ -75,17 +91,7 @@ const initValidation = () => {
   );
 };
 
-const openUploadOverlay = () => {
-  if (!overlay) {
-    return;
-  }
-
-  overlay.classList.remove('hidden');
-  document.body.classList.add('modal-open');
-  document.addEventListener('keydown', onDocumentKeydown);
-};
-
-const closeUploadOverlay = () => {
+function closeUploadOverlay() {
   if (!overlay) {
     return;
   }
@@ -96,6 +102,7 @@ const closeUploadOverlay = () => {
   if (uploadForm) {
     uploadForm.reset();
   }
+
   if (pristine) {
     pristine.reset();
   }
@@ -104,8 +111,10 @@ const closeUploadOverlay = () => {
     fileInput.value = '';
   }
 
+  resetImageEffects();
+
   document.removeEventListener('keydown', onDocumentKeydown);
-};
+}
 
 function onDocumentKeydown(evt) {
   if (!isEscapeKey(evt)) {
@@ -115,6 +124,16 @@ function onDocumentKeydown(evt) {
   evt.preventDefault();
   closeUploadOverlay();
 }
+
+const openUploadOverlay = () => {
+  if (!overlay) {
+    return;
+  }
+
+  overlay.classList.remove('hidden');
+  document.body.classList.add('modal-open');
+  document.addEventListener('keydown', onDocumentKeydown);
+};
 
 const onTextFieldKeydown = (evt) => {
   if (isEscapeKey(evt)) {
@@ -138,7 +157,6 @@ const onCancelButtonClick = () => {
 
 const onFormSubmit = (evt) => {
   if (!pristine) {
-    // если Pristine не инициализирован, просто даём форме отправиться
     return;
   }
 
