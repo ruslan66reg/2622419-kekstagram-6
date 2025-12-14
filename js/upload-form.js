@@ -1,5 +1,6 @@
 import { isEscapeKey } from './util.js';
 import { resetImageEffects } from './image-effects.js';
+import { sendData } from './api.js';
 
 const uploadForm = document.querySelector('.img-upload__form');
 const fileInput = document.querySelector('.img-upload__input');
@@ -7,6 +8,7 @@ const overlay = document.querySelector('.img-upload__overlay');
 const cancelButton = document.querySelector('.img-upload__cancel');
 const hashtagField = document.querySelector('.text__hashtags');
 const commentField = document.querySelector('.text__description');
+const submitButton = document.querySelector('.img-upload__submit');
 
 const MAX_COMMENT_LENGTH = 140;
 const MAX_HASHTAGS = 5;
@@ -89,6 +91,71 @@ const initValidation = () => {
   );
 };
 
+const blockSubmitButton = () => {
+  if (!submitButton) {
+    return;
+  }
+
+  submitButton.disabled = true;
+  submitButton.textContent = 'Публикуем...';
+};
+
+const unblockSubmitButton = () => {
+  if (!submitButton) {
+    return;
+  }
+
+  submitButton.disabled = false;
+  submitButton.textContent = 'Опубликовать';
+};
+
+const showMessage = (templateId) => {
+  const template = document.querySelector(`#${templateId}`);
+  if (!template) {
+    return;
+  }
+
+  const messageElement = template.content.querySelector('section').cloneNode(true);
+  document.body.append(messageElement);
+
+  const button = messageElement.querySelector('button');
+
+  const onMessageEscKeydown = (evt) => {
+    if (!isEscapeKey(evt)) {
+      return;
+    }
+
+    evt.preventDefault();
+    closeMessage();
+  };
+
+  const onMessageClick = (evt) => {
+    if (evt.target === messageElement) {
+      closeMessage();
+    }
+  };
+
+  function onButtonClick() {
+    closeMessage();
+  }
+
+  function closeMessage() {
+    messageElement.remove();
+    document.removeEventListener('keydown', onMessageEscKeydown);
+    messageElement.removeEventListener('click', onMessageClick);
+    if (button) {
+      button.removeEventListener('click', onButtonClick);
+    }
+  }
+
+  if (button) {
+    button.addEventListener('click', onButtonClick);
+  }
+
+  messageElement.addEventListener('click', onMessageClick);
+  document.addEventListener('keydown', onMessageEscKeydown);
+};
+
 function closeUploadOverlay() {
   if (!overlay) {
     return;
@@ -162,7 +229,24 @@ const onFormSubmit = (evt) => {
 
   if (!isValid) {
     evt.preventDefault();
+    return;
   }
+
+  evt.preventDefault();
+  blockSubmitButton();
+
+  const formData = new FormData(uploadForm);
+
+  sendData(formData)
+    .then(() => {
+      unblockSubmitButton();
+      closeUploadOverlay();
+      showMessage('success');
+    })
+    .catch(() => {
+      unblockSubmitButton();
+      showMessage('error');
+    });
 };
 
 const initUploadForm = () => {
