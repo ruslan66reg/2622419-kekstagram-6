@@ -5,7 +5,8 @@ const getRandomInteger = (a, b) => {
   return Math.floor(result);
 };
 
-const getRandomArrayElement = (elements) => elements[getRandomInteger(0, elements.length - 1)];
+const getRandomArrayElement = (elements) =>
+  elements[getRandomInteger(0, elements.length - 1)];
 
 const isEscapeKey = (evt) => evt.key === 'Escape';
 
@@ -31,9 +32,33 @@ const showAlert = (message) => {
   }, 5000);
 };
 
+function debounce(callback, timeoutDelay = 500) {
+  let timeoutId;
+
+  return (...rest) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => callback.apply(this, rest), timeoutDelay);
+  };
+}
+
+function throttle(callback, delayBetweenFrames) {
+  let lastTime = 0;
+
+  return (...rest) => {
+    const now = new Date();
+
+    if (now - lastTime >= delayBetweenFrames) {
+      callback.apply(this, rest);
+      lastTime = now;
+    }
+  };
+}
+
 export {
   getRandomInteger,
   getRandomArrayElement,
   isEscapeKey,
-  showAlert
+  showAlert,
+  debounce,
+  throttle
 };

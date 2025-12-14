@@ -1,6 +1,6 @@
 import { getData } from './api.js';
 import { openBigPicture } from './big-picture.js';
-import { showAlert } from './util.js';
+import { showAlert, debounce } from './util.js';
 
 const picturesContainer = document.querySelector('.pictures');
 const filtersElement = document.querySelector('.img-filters');
@@ -8,6 +8,11 @@ const pictureTemplate = document
   .querySelector('#picture')
   .content
   .querySelector('.picture');
+
+const RANDOM_PHOTOS_COUNT = 10;
+const RERENDER_DELAY = 500;
+
+let allPhotos = [];
 
 const createThumbnail = (photo) => {
   const pictureElement = pictureTemplate.cloneNode(true);
@@ -47,14 +52,58 @@ const renderThumbnails = (photos) => {
   picturesContainer.append(fragment);
 };
 
+const getFilteredPhotos = (filterId) => {
+  if (filterId === 'filter-random') {
+    const shuffled = allPhotos.slice().sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, RANDOM_PHOTOS_COUNT);
+  }
+
+  if (filterId === 'filter-discussed') {
+    return allPhotos
+      .slice()
+      .sort((a, b) => b.comments.length - a.comments.length);
+  }
+
+  return allPhotos.slice();
+};
+
+const debouncedRenderThumbnails = debounce((photos) => {
+  renderThumbnails(photos);
+}, RERENDER_DELAY);
+
+const onFiltersClick = (evt) => {
+  const target = evt.target;
+
+  if (!target.classList.contains('img-filters__button')) {
+    return;
+  }
+
+  const activeButton = filtersElement.querySelector('.img-filters__button--active');
+  if (activeButton) {
+    activeButton.classList.remove('img-filters__button--active');
+  }
+
+  target.classList.add('img-filters__button--active');
+
+  const filteredPhotos = getFilteredPhotos(target.id);
+  debouncedRenderThumbnails(filteredPhotos);
+};
+
+const initFilters = () => {
+  if (!filtersElement) {
+    return;
+  }
+
+  filtersElement.classList.remove('img-filters--inactive');
+  filtersElement.addEventListener('click', onFiltersClick);
+};
+
 const drawThumbnails = () => {
   getData()
     .then((photos) => {
-      renderThumbnails(photos);
-
-      if (filtersElement) {
-        filtersElement.classList.remove('img-filters--inactive');
-      }
+      allPhotos = photos.slice();
+      renderThumbnails(allPhotos);
+      initFilters();
     })
     .catch(() => {
       showAlert('Не удалось загрузить фотографии. Попробуйте обновить страницу.');
