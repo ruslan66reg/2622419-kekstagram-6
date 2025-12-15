@@ -10,11 +10,18 @@ const hashtagField = document.querySelector('.text__hashtags');
 const commentField = document.querySelector('.text__description');
 const submitButton = document.querySelector('.img-upload__submit');
 
+const previewImg = document.querySelector('.img-upload__preview img');
+const effectsPreviews = document.querySelectorAll('.effects__preview');
+
+const DEFAULT_PHOTO_URL = 'img/upload-default-image.jpg';
+const FILE_TYPES = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+
 const MAX_COMMENT_LENGTH = 140;
 const MAX_HASHTAGS = 5;
 const HASHTAG_PATTERN = /^#[a-zа-яё0-9]{1,19}$/i;
 
 let pristine = null;
+let currentObjectUrl = null;
 
 const initValidation = () => {
   if (!uploadForm || !hashtagField || !commentField) {
@@ -26,8 +33,6 @@ const initValidation = () => {
   }
 
   if (typeof Pristine === 'undefined') {
-    // eslint-disable-next-line no-console
-    console.warn('Pristine is not loaded, validation disabled');
     return;
   }
 
@@ -156,6 +161,34 @@ const showMessage = (templateId) => {
   document.addEventListener('keydown', onMessageEscKeydown);
 };
 
+const setPhotoPreview = () => {
+  if (!fileInput || !previewImg) {
+    return;
+  }
+
+  const file = fileInput.files[0];
+  if (!file) {
+    return;
+  }
+
+  const fileName = file.name.toLowerCase();
+  const matches = FILE_TYPES.some((ext) => fileName.endsWith(ext));
+  if (!matches) {
+    return;
+  }
+
+  if (currentObjectUrl) {
+    URL.revokeObjectURL(currentObjectUrl);
+  }
+
+  currentObjectUrl = URL.createObjectURL(file);
+  previewImg.src = currentObjectUrl;
+
+  effectsPreviews.forEach((preview) => {
+    preview.style.backgroundImage = `url("${currentObjectUrl}")`;
+  });
+};
+
 function closeUploadOverlay() {
   if (!overlay) {
     return;
@@ -175,6 +208,19 @@ function closeUploadOverlay() {
   if (fileInput) {
     fileInput.value = '';
   }
+
+  if (currentObjectUrl) {
+    URL.revokeObjectURL(currentObjectUrl);
+    currentObjectUrl = null;
+  }
+
+  if (previewImg) {
+    previewImg.src = DEFAULT_PHOTO_URL;
+  }
+
+  effectsPreviews.forEach((preview) => {
+    preview.style.backgroundImage = '';
+  });
 
   resetImageEffects();
 
@@ -212,6 +258,7 @@ const onFileInputChange = () => {
   }
 
   if (fileInput.files && fileInput.files.length > 0) {
+    setPhotoPreview();
     openUploadOverlay();
   }
 };
