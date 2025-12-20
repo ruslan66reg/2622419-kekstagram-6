@@ -1,113 +1,54 @@
 import { getData } from './api.js';
+import { showDataError } from './util.js';
 import { openBigPicture } from './big-picture.js';
-import { showAlert, debounce } from './util.js';
+import { initFilters } from './filters.js';
 
 const picturesContainer = document.querySelector('.pictures');
-const filtersElement = document.querySelector('.img-filters');
-const pictureTemplate = document
-  .querySelector('#picture')
-  .content
-  .querySelector('.picture');
+const pictureTemplate = document.querySelector('#picture').content.querySelector('.picture');
+const filtersContainer = document.querySelector('.img-filters');
 
-const RANDOM_PHOTOS_COUNT = 10;
-const RERENDER_DELAY = 500;
-
-let allPhotos = [];
-
-const createThumbnail = (photo) => {
-  const pictureElement = pictureTemplate.cloneNode(true);
-
-  const img = pictureElement.querySelector('.picture__img');
-  const likesElement = pictureElement.querySelector('.picture__likes');
-  const commentsElement = pictureElement.querySelector('.picture__comments');
-
-  img.src = photo.url;
-  img.alt = photo.description;
-  likesElement.textContent = photo.likes;
-  commentsElement.textContent = photo.comments.length;
-
-  pictureElement.addEventListener('click', (evt) => {
-    evt.preventDefault();
-    openBigPicture(photo);
-  });
-
-  return pictureElement;
-};
+let photos = [];
 
 const clearThumbnails = () => {
-  const oldPictures = picturesContainer.querySelectorAll('.picture');
-  oldPictures.forEach((element) => element.remove());
+  picturesContainer.querySelectorAll('.picture').forEach((el) => el.remove());
 };
 
-const renderThumbnails = (photos) => {
+const renderThumbnails = (items) => {
   clearThumbnails();
 
   const fragment = document.createDocumentFragment();
 
-  photos.forEach((photo) => {
-    const thumbnail = createThumbnail(photo);
-    fragment.append(thumbnail);
+  items.forEach((photo) => {
+    const picture = pictureTemplate.cloneNode(true);
+
+    const img = picture.querySelector('.picture__img');
+    img.src = photo.url;
+    img.alt = photo.description;
+
+    picture.querySelector('.picture__likes').textContent = String(photo.likes);
+    picture.querySelector('.picture__comments').textContent = String(photo.comments.length);
+
+    picture.addEventListener('click', (evt) => {
+      evt.preventDefault();
+      openBigPicture(photo);
+    });
+
+    fragment.append(picture);
   });
 
   picturesContainer.append(fragment);
 };
 
-const getFilteredPhotos = (filterId) => {
-  if (filterId === 'filter-random') {
-    const shuffled = allPhotos.slice().sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, RANDOM_PHOTOS_COUNT);
-  }
+const initGallery = async () => {
+  try {
+    photos = await getData();
+    renderThumbnails(photos);
 
-  if (filterId === 'filter-discussed') {
-    return allPhotos
-      .slice()
-      .sort((a, b) => b.comments.length - a.comments.length);
+    filtersContainer.classList.remove('img-filters--inactive');
+    initFilters(photos, renderThumbnails);
+  } catch {
+    showDataError('Не удалось загрузить фотографии');
   }
-
-  return allPhotos.slice();
 };
 
-const debouncedRenderThumbnails = debounce((photos) => {
-  renderThumbnails(photos);
-}, RERENDER_DELAY);
-
-const onFiltersClick = (evt) => {
-  const target = evt.target;
-
-  if (!target.classList.contains('img-filters__button')) {
-    return;
-  }
-
-  const activeButton = filtersElement.querySelector('.img-filters__button--active');
-  if (activeButton) {
-    activeButton.classList.remove('img-filters__button--active');
-  }
-
-  target.classList.add('img-filters__button--active');
-
-  const filteredPhotos = getFilteredPhotos(target.id);
-  debouncedRenderThumbnails(filteredPhotos);
-};
-
-const initFilters = () => {
-  if (!filtersElement) {
-    return;
-  }
-
-  filtersElement.classList.remove('img-filters--inactive');
-  filtersElement.addEventListener('click', onFiltersClick);
-};
-
-const drawThumbnails = () => {
-  getData()
-    .then((photos) => {
-      allPhotos = photos.slice();
-      renderThumbnails(allPhotos);
-      initFilters();
-    })
-    .catch(() => {
-      showAlert('Не удалось загрузить фотографии. Попробуйте обновить страницу.');
-    });
-};
-
-export { drawThumbnails };
+export { initGallery };
