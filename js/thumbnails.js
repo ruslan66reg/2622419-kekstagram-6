@@ -4,10 +4,7 @@ import { openBigPicture } from './big-picture.js';
 import { initFilters } from './filters.js';
 
 const picturesContainer = document.querySelector('.pictures');
-const pictureTemplate = document
-  .querySelector('#picture')
-  .content
-  .querySelector('.picture');
+const pictureTemplate = document.querySelector('#picture').content.querySelector('.picture');
 const filtersContainer = document.querySelector('.img-filters');
 
 let photos = [];
